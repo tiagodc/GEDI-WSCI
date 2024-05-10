@@ -45,7 +45,7 @@ Rscript als_ce_xyz.R
 
 The python libraries necessary to run the WSCI models are listed in the `python_requirements.txt` file.
 
-This code was originally used to generate WSCI estiamtes from GEDI RH metrics extracted from teh L2A product (Dubayah et al. 2020) at different Plant Functional Types (PFTs).
+This code was originally used to generate WSCI estimates from GEDI RH metrics extracted from the L2A product (Dubayah et al. 2020) at different Plant Functional Types (PFTs).
 
 ##### Usage
 
