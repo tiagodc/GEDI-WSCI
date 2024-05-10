@@ -19,10 +19,8 @@ This code was originally used to extract CExyz measures from Airborle laser Scan
 ##### Usage
 
 ```terminal 
-Rscript als_ce_xyz.R -h
 
-Usage: 
-    als_ce_xyz.R 
+Rscript als_ce_xyz.R
     [-[-help|h]]                        print help
     [-[-input|i] <character>]           path with point cloud LiDAR files (las/laz)
     [-[-output|o] <character>]          path to write structural complexity metrics in geospatial vector format (gpkg, shp, geojson etc.)
@@ -52,9 +50,7 @@ This code was originally used to generate WSCI estiamtes from GEDI RH metrics ex
 ##### Usage
 
 ```terminal 
-python gedi_wsci.py -h
-
-usage: gedi_wsci.py [-h] -i INPUT -o OUTPUT [-p PFT] [-r RH_COLS] [-x INDEX [INDEX ...]]
+gedi_wsci.py [-h] -i INPUT -o OUTPUT [-p PFT] [-r RH_COLS] [-x INDEX [INDEX ...]]
 
 Apply Waveform Structural Complexity (WSCI) model to input RH metrics
 
@@ -96,5 +92,5 @@ The `PFT` codes used to call different WSCI models are listed below:
 |  5 | wsci_z_pi      | float   |
 
 
-## References
+### References
 
