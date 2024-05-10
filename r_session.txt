@@ -1,0 +1,42 @@
+R version 4.2.3 (2023-03-15)
+Platform: x86_64-conda-linux-gnu (64-bit)
+Running under: Red Hat Enterprise Linux
+
+Matrix products: default
+BLAS/LAPACK: libopenblasp-r0.3.20.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] terra_1.7-29       sf_1.0-12          wk_0.7.3           TreeLS_2.0.5      
+[5] data.table_1.14.8  magrittr_2.0.3     lidR_4.1.0         future.apply_1.9.0
+[9] future_1.32.0     
+
+loaded via a namespace (and not attached):
+ [1] benchmarkmeData_1.0.4 tidyselect_1.2.0      xfun_0.39            
+ [4] listenv_0.9.0         lattice_0.21-8        vctrs_0.6.2          
+ [7] generics_0.1.2        htmltools_0.5.5       base64enc_0.1-3      
+[10] utf8_1.2.3            rlang_1.1.1           e1071_1.7-13         
+[13] pillar_1.9.0          glue_1.6.2            DBI_1.1.3            
+[16] sp_1.6-1              rlas_1.6.2            foreach_1.5.2        
+[19] lifecycle_1.0.3       benchmarkme_1.0.7     raster_3.6-20        
+[22] htmlwidgets_1.6.2     codetools_0.2-19      knitr_1.43           
+[25] fastmap_1.1.1         doParallel_1.0.17     parallel_4.2.3       
+[28] class_7.3-22          fansi_1.0.4           Rcpp_1.0.10          
+[31] KernSmooth_2.23-20    classInt_0.4-9        jsonlite_1.8.5       
+[34] deldir_1.0-6          parallelly_1.36.0     nabor_0.5.0          
+[37] digest_0.6.31         dplyr_1.0.9           dismo_1.3-5          
+[40] grid_4.2.3            cli_3.6.1             tools_4.2.3          
+[43] rgl_1.2.1             proxy_0.4-27          tibble_3.2.1         
+[46] pkgconfig_2.0.3       Matrix_1.5-4.1        httr_1.4.6           
+[49] iterators_1.0.14      R6_2.5.1              globals_0.16.2       
+[52] units_0.8-2           compiler_4.2.3  
