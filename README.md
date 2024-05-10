@@ -33,6 +33,15 @@ Usage:
     [-[-las_epsg|e] <integer>]          (optional) EPSG code of input LiDAR point clouds, if not encoded in the las/laz file
 ```
 
+##### Output
+|    | column   | dtype   |
+|---:|:---------|:--------|
+|  0 | XY       | float   |
+|  1 | XZ       | float   |
+|  2 | YZ       | float   |
+|  3 | XYZ      | float   |
+|  4 | p        | float   |
+|  5 | vox      | float   |
 
 #### Python code
 
@@ -75,5 +84,17 @@ The `PFT` codes used to call different WSCI models are listed below:
 | 11  | W       | Woodland                  |
 | -1  | -       | Other                     |
 
-### References
+##### Output
+
+|    | column   | dtype   |
+|---:|:---------|:--------|
+|  0 | wsci       | float   |
+|  1 | wsci_pi       | float   |
+|  2 | wsci_xy       | float   |
+|  3 | wsci_xy_pi      | float   |
+|  4 | wsci_z        | float   |
+|  5 | wsci_z_pi      | float   |
+
+
+## References
 
