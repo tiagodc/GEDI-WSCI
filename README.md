@@ -32,14 +32,14 @@ Rscript als_ce_xyz.R
 ```
 
 ##### Output
-|    | column   | dtype   |
-|---:|:---------|:--------|
-|  0 | XY       | float   |
-|  1 | XZ       | float   |
-|  2 | YZ       | float   |
-|  3 | XYZ      | float   |
-|  4 | p        | float   |
-|  5 | vox      | float   |
+|    | column   | dtype   | description |
+|---:|:---------|:--------|:------------|
+|  0 | XY       | float   | horizontal entropy component |
+|  1 | XZ       | float   | vertical entropy component |
+|  2 | YZ       | float   | vertical entropy component |
+|  3 | XYZ      | float   | 3D canopy entropy|
+|  4 | p        | float   | p value from Mann-Kendall trend test|
+|  5 | vox      | float   | voxel size |
 
 #### Python code
 
@@ -82,14 +82,14 @@ The `PFT` codes used to call different WSCI models are listed below:
 
 ##### Output
 
-|    | column   | dtype   |
-|---:|:---------|:--------|
-|  0 | wsci       | float   |
-|  1 | wsci_pi       | float   |
-|  2 | wsci_xy       | float   |
-|  3 | wsci_xy_pi      | float   |
-|  4 | wsci_z        | float   |
-|  5 | wsci_z_pi      | float   |
+|    | column   | dtype   | description |
+|---:|:---------|:--------|:------------|
+|  0 | wsci       | float   | Waveform Structural Complexity Index estimate |
+|  1 | wsci_pi       | float   | WSCI prediction interval at 95% probability |
+|  2 | wsci_xy       | float   | Estimated horizontal complexity component | 
+|  3 | wsci_xy_pi      | float   | Horizontal component prediction interval at 95% probability |
+|  4 | wsci_z        | float   | Estimated vertical complexity |
+|  5 | wsci_z_pi      | float   | Vwertical component prediction interval at 95% probability |
 
 
 ### References
