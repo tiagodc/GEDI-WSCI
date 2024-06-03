@@ -89,7 +89,7 @@ The `PFT` codes used to call different WSCI models are listed below:
 |  2 | wsci_xy       | float   | Estimated horizontal complexity component | 
 |  3 | wsci_xy_pi      | float   | Horizontal component prediction interval at 95% probability |
 |  4 | wsci_z        | float   | Estimated vertical complexity |
-|  5 | wsci_z_pi      | float   | Vwertical component prediction interval at 95% probability |
+|  5 | wsci_z_pi      | float   | Vertical component prediction interval at 95% probability |
 
 
 ### References
