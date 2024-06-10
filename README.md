@@ -23,12 +23,15 @@ This code was originally used to extract CExyz measures from Airborle laser Scan
 Rscript als_ce_xyz.R
     [-[-help|h]]                        print help
     [-[-input|i] <character>]           path with point cloud LiDAR files (las/laz)
-    [-[-output|o] <character>]          path to write structural complexity metrics in geospatial vector format (gpkg, shp, geojson etc.)
+    [-[-output|o] <character>]          path to write structural complexity metrics - a directory when processing wall-to-wall <w2w> or a geospatial vector format otherwie (gpkg, shp, geojson etc.)
     [-[-plots_path|f] <character>]      (optional) input file with plot locations (e.g. GEDI footprints) in geospatial vector format (gpkg, shp, geojson etc.)
     [-[-n_plots|n] <integer>]           (optional) if no input plot locations are provided, how many random samples to draw? [default = 100]
     [-[-plot_size|s] <integer>]         (optional) plot diameter, in point cloud units [default = 25]
     [-[-gridded|g]]                     (optional) sample from a regular grid instead of randomly
+    [-[-w2w|w]]                         (optional) wall-to-wall processing - calculate metrics for all pixels at <plot_size> resolution
     [-[-las_epsg|e] <integer>]          (optional) EPSG code of input LiDAR point clouds, if not encoded in the las/laz file
+    [-[-voxel|v] <double>]              (optional) voxel size flter to apply to LiDAR files before processing 
+    [-[-cores|c] <integer>]             (optional) number of CPU cores to use
 ```
 
 ##### Output
@@ -40,6 +43,8 @@ Rscript als_ce_xyz.R
 |  3 | XYZ      | float   | 3D canopy entropy|
 |  4 | p        | float   | p value from Mann-Kendall trend test|
 |  5 | vox      | float   | voxel size |
+
+When processing wall-to-wall (`w2w`) generates raster files with bands corresponding to the metrics in `column`.
 
 #### Python code
 

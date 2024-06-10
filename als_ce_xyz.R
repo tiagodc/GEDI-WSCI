@@ -5,10 +5,13 @@ spec = matrix(c(
   'input'      , 'i', 1, "character", ## -- path with ALS files
   'output'     , 'o', 1, "character", ## -- path to write structural complexity metrics
   'plots_path' , 'f', 1, "character", ## -- input plot locations (geospatial points file, e.g. GEDI footprint coordinates)
-  'n_plots'    , 'n', 1, "integer", ## -- if no input plot locations are provided, how many random samples to draw?
-  'plot_size'  , 's', 1, "integer", ## -- plot diameter, in point cloud units (e.g. 25m for GEDI footprints)
-  'gridded'    , 'g', 0, "logical", ## -- sample on a regular grid instead of randomly
-  'las_epsg'   , 'e', 1, "integer"  ## -- EPSG code of ALS point clouds (if not in LASheader)
+  'n_plots'    , 'n', 1, "integer",   ## -- if no input plot locations are provided, how many random samples to draw?
+  'plot_size'  , 's', 1, "integer",   ## -- plot diameter, in point cloud units (e.g. 25m for GEDI footprints)
+  'gridded'    , 'g', 0, "logical",   ## -- sample on a regular grid instead of randomly
+  'w2w'        , 'w', 0, "logical",   ## -- wall to wall raster outputs (process with LAScatalog)
+  'las_epsg'   , 'e', 1, "integer",   ## -- EPSG code of ALS point clouds (if not in LASheader)
+  'voxel'      , 'v', 1, "double",     ## -- voxel filter initial spacing
+  'cores'      , 'c', 1, "integer"    ## -- number of cpus to use
 ), byrow=TRUE, ncol=4)
 
 opt = getopt(spec)
@@ -33,6 +36,17 @@ if(!is.null(opt$plots_path)) PLOTS_PATH = opt$plots_path
 LAS_EPSG = NA
 if(!is.null(opt$las_epsg)) LAS_EPSG = opt$las_epsg
 
+RASTER = FALSE
+if(!is.null(opt$w2w)) RASTER = TRUE
+
+VOXEL = 0
+if(RASTER) VOXEL = 0.5
+if(!is.null(opt$voxel)) VOXEL = opt$voxel
+
+n_cores = parallel::detectCores()
+N_WORKERS = as.integer(n_cores / 4)
+if(!is.null(opt$cores) && opt$cores <= n_cores) N_WORKERS = opt$cores
+
 IN_PATH = opt$input
 OUT_PATH = opt$output
 
@@ -56,14 +70,15 @@ avg_point_dist = function(las, h=1){
   return(avg_dst)
 }
 
-adaptative_resample = function(las, h=1, alpha = 0.05){
+adaptative_resample = function(las, h=1, alpha = 0.05, step=.1){
   avg_dst = avg_point_dist(las, h)
   
   noise_tol = mean(avg_dst$dist) + 2*sd(avg_dst$dist)
   avg_dst = avg_dst[dist < noise_tol,]
+  if (nrow(avg_dst) < 3) return(NULL)
   max_dst = max(avg_dst$dist)
   
-  for (ratio in seq(2,5,.1)){
+  for (ratio in seq(2,5,step)){
     vox = ratio * max_dst
     vlas = tlsSample(las, smp.voxelize(vox))
     avg_dst = avg_point_dist(vlas, h)
@@ -98,11 +113,11 @@ canopy_entropy = function(las, bw=.2, grid_size=.1){
   return(df)
 }
 
-get_entropy = function(las, h=1){
-    las = filter_poi(las, Height >= h)
-    if(is.empty(las)) return(NULL)
+get_entropy = function(las){
     las@data$Z = las@data$Height
     res = adaptative_resample(las)
+    
+    if(is.null(res)) return(NULL)
     
     ent = canopy_entropy(res$las)
     ent$p = res$mk.test$p.value
@@ -120,10 +135,14 @@ las_height = function(las, dtm_res=0.5){
     return(las)
 }
 
-get_complexity = function(las){
+get_complexity = function(las, h=1){
     if( !('Height' %in% names(las@data)) ){
         las = las_height(las)
     } 
+    
+    las = filter_poi(las, Height >= h)
+    if(is.empty(las)) return(NULL)
+
     ce = get_entropy(las)
     return(ce)
 }
@@ -142,6 +161,7 @@ clip_and_process = function(pt, ctg, l=PLOT_SIZE){
     
     if(length(files) == 0) return(NULL)    
     
+    # filt = paste(filt, "-thin_with_voxel 0.5")
     las = readLAS(files, select = cols, filter = filt)
     
     if(is.empty(las)) return(NULL)
@@ -153,11 +173,37 @@ clip_and_process = function(pt, ctg, l=PLOT_SIZE){
     
 }
 
+## -- catalog functions
+tile_height = function(path, odir, ctg){
+    las = readLAS(path, select=opt_select(ctg), filter=opt_filter(ctg))
+    
+    if(!any(las$Classification == 2)){
+        las = classify_ground(las, csf(), FALSE)
+    }
+    
+    las = las_height(las)
+    olas = file.path(odir, basename(path))
+    writeLAS(las, olas)
+    return(olas)
+}
+               
+pix_complexity = function(x,y,z,h){
+    las = suppressMessages(LAS(data.table(X=x,Y=y,Z=z,Height=h), check=F))
+    
+    if(is.empty(las)) return(NULL)
+    
+    ce = tryCatch(get_entropy(las), error=function(e) NULL)
+    
+    if(!is.null(ce)){
+        ce = as.list(ce)
+    }
+    
+    return(ce)
+}
+                    
 ## -- run
-n_cores = parallel::detectCores()
-n_workers = as.integer(n_cores / 4)
 set_lidr_threads(1)
-plan(multicore, workers = n_workers)
+plan(multicore, workers = N_WORKERS)
 
 cat(glue::glue('\n## -- calculating complexity metrics for {IN_PATH}\n'))
 
@@ -168,21 +214,63 @@ opt_stop_early(ctg) = FALSE
 if(is.na(st_crs(ctg))){
     st_crs(ctg) = LAS_EPSG
 }                    
-                    
+
 lhd = readLASheader(ctg$filename[1])
 h_byte = which(names(lhd@VLR$Extra_Bytes$`Extra Bytes Description`) == 'Height')
 opt_select(ctg) = paste0('xyzc', h_byte)
 
+if(VOXEL > 0) opt_filter(ctg) = glue::glue('-thin_with_voxel {VOXEL}')
+
+## -- wall to wall procesing
+if(RASTER){
+    cat(glue::glue('\n\n## -- opening {N_WORKERS} parallel processes for wall-to-wall mapping\n'))
+    # IN_PATH = '/gpfs/data1/vclgp/decontot/data/point_clouds/dlr_froscham/las2_fix_sub'
+    # OUT_PATH = '/gpfs/data1/vclgp/decontot/data/point_clouds/dlr_froscham/las2_fix_sub_ce' 
+    # ctg = readLAScatalog(IN_PATH)
+    
+    if(length(h_byte) == 0){
+        opt_chunk_size(ctg) = 0    
+        tmp_out = file.path(OUT_PATH, "_laz")
+        if(!dir.exists(tmp_out)) dir.create(tmp_out, recursive = T)
+        h_files = future_lapply(ctg$filename, tile_height, odir=tmp_out, ctg=ctg, future.seed=TRUE)
+        
+        ctg = readLAScatalog(h_files %>% unlist, filter="-keep_attribute_above 0 1.0", select='xyz1')        
+    }else{
+        attid = as.integer(h_byte - 1)
+        h_filt = glue::glue("-keep_attribute_above {attid} 1.0")
+        opt_filter(ctg) = paste(opt_filter(ctg), h_filt, sep=" ")
+    }
+    
+    opt_chunk_size(ctg) = PLOT_SIZE * 5
+    opt_chunk_buffer(ctg) = 0
+    opt_stop_early(ctg) = FALSE
+    opt_progress(ctg) = TRUE
+
+    opt_merge(ctg)=FALSE
+    opt_output_files(ctg) = file.path(OUT_PATH, "tile_{ID}_{XLEFT}_{YBOTTOM}")
+
+    ce_ras = pixel_metrics(ctg, ~pix_complexity(X,Y,Z,Height), res=PLOT_SIZE)
+    
+    nras = length(ce_ras)
+    cat(glue::glue('\n## -- merging {nras} output raster files\n'))
+    
+    tiles = lapply(ce_ras, rast)
+    merged_raster = do.call(terra::merge, tiles)
+    opath = file.path(OUT_PATH, 'merged.tif')
+    writeRaster(merged_raster, opath, overwrite = TRUE)
+    
+    cat(glue::glue('\n## -- DONE\n'))    
+    quit('no')
+}                    
+
+## -- plot-wise procesing
 buff = ctg@data %>% st_union %>% st_buffer(-PLOT_SIZE/2)
 
 geo_index = NULL
 if(is.null(PLOTS_PATH)){
-    if(GRIDDED){
-        sample_pts = st_sample(buff, size=as.double(st_area(buff)) %/% (PLOT_SIZE^2), type = 'regular')
-        if(N_PLOTS > 0) sample_pts = sample_pts %>% sample(N_PLOTS)
-    }else{
-        sample_pts = st_sample(buff, size=N_PLOTS, type ='random')
-    }
+    gtype = if(GRIDDED) 'regular' else 'random'
+    gsize = if(N_PLOTS == 0 && GRIDDED) as.double(st_area(buff)) %/% (PLOT_SIZE^2) else N_PLOTS
+    sample_pts = st_sample(buff, size=gsize, type = gtype)    
     st_crs(sample_pts) = st_crs(ctg)
 }else{
     sample_pts = st_read(PLOTS_PATH)
@@ -190,7 +278,7 @@ if(is.null(PLOTS_PATH)){
     sample_pts = st_transform(sample_pts, st_crs(ctg))$geom
 }
 
-cat(glue::glue('\n## -- opening {n_workers} parallel processes to process {length(sample_pts)} plots\n'))
+cat(glue::glue('\n## -- opening {N_WORKERS} parallel processes to process {length(sample_pts)} plots\n'))
 complexity = future_lapply(sample_pts, clip_and_process, ctg=ctg, l=PLOT_SIZE, future.seed=TRUE)
 
 keep = !sapply(complexity, function(x) is.null(x) || nrow(x) == 0)
