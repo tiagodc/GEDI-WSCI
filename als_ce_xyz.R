@@ -10,7 +10,7 @@ spec = matrix(c(
   'gridded'    , 'g', 0, "logical",   ## -- sample on a regular grid instead of randomly
   'w2w'        , 'w', 0, "logical",   ## -- wall to wall raster outputs (process with LAScatalog)
   'las_epsg'   , 'e', 1, "integer",   ## -- EPSG code of ALS point clouds (if not in LASheader)
-  'voxel'      , 'v', 1, "double",     ## -- voxel filter initial spacing
+  'voxel'      , 'v', 1, "double",    ## -- voxel filter initial spacing
   'cores'      , 'c', 1, "integer"    ## -- number of cpus to use
 ), byrow=TRUE, ncol=4)
 
@@ -48,6 +48,7 @@ N_WORKERS = as.integer(n_cores / 4)
 if(!is.null(opt$cores) && opt$cores <= n_cores) N_WORKERS = opt$cores
 
 IN_PATH = opt$input
+# IN_PATH = '/gpfs/data1/vclgp/decontot/data/point_clouds/inpe_brazil/NP_T-0566.laz'
 OUT_PATH = opt$output
 
 ## -- load libraries
@@ -174,17 +175,16 @@ clip_and_process = function(pt, ctg, l=PLOT_SIZE){
 }
 
 ## -- catalog functions
-tile_height = function(path, odir, ctg){
-    las = readLAS(path, select=opt_select(ctg), filter=opt_filter(ctg))
+chunk_height = function(chunk){
+    las = readLAS(chunk)
+    if (is.empty(las)) return(NULL)
     
     if(!any(las$Classification == 2)){
         las = classify_ground(las, csf(), FALSE)
     }
     
     las = las_height(las)
-    olas = file.path(odir, basename(path))
-    writeLAS(las, olas)
-    return(olas)
+    return(las)
 }
                
 pix_complexity = function(x,y,z,h){
@@ -210,6 +210,7 @@ cat(glue::glue('\n## -- calculating complexity metrics for {IN_PATH}\n'))
 ctg = readLAScatalog(IN_PATH)
 opt_chunk_buffer(ctg) = 0 
 opt_stop_early(ctg) = FALSE
+opt_progress(ctg) = TRUE
 
 if(is.na(st_crs(ctg))){
     st_crs(ctg) = LAS_EPSG
@@ -224,17 +225,17 @@ if(VOXEL > 0) opt_filter(ctg) = glue::glue('-thin_with_voxel {VOXEL}')
 ## -- wall to wall procesing
 if(RASTER){
     cat(glue::glue('\n\n## -- opening {N_WORKERS} parallel processes for wall-to-wall mapping\n'))
-    # IN_PATH = '/gpfs/data1/vclgp/decontot/data/point_clouds/dlr_froscham/las2_fix_sub'
-    # OUT_PATH = '/gpfs/data1/vclgp/decontot/data/point_clouds/dlr_froscham/las2_fix_sub_ce' 
-    # ctg = readLAScatalog(IN_PATH)
     
     if(length(h_byte) == 0){
-        opt_chunk_size(ctg) = 0    
-        tmp_out = file.path(OUT_PATH, "_laz")
-        if(!dir.exists(tmp_out)) dir.create(tmp_out, recursive = T)
-        h_files = future_lapply(ctg$filename, tile_height, odir=tmp_out, ctg=ctg, future.seed=TRUE)
+        opt_chunk_size(ctg) = PLOT_SIZE * 20
+        opt_chunk_buffer(ctg) = 10
+        opt_output_files(ctg) = file.path(OUT_PATH, "_laz/tile_{ID}_{XLEFT}_{YBOTTOM}")
+        opt_laz_compression(ctg) = TRUE
         
-        ctg = readLAScatalog(h_files %>% unlist, filter="-keep_attribute_above 0 1.0", select='xyz1')        
+        ofiles = catalog_apply(ctg, chunk_height)        
+        ctg = ofiles %>% unlist %>% readLAScatalog
+        opt_filter(ctg) = "-keep_attribute_above 0 1.0"
+        opt_select(ctg) = "xyz1"    
     }else{
         attid = as.integer(h_byte - 1)
         h_filt = glue::glue("-keep_attribute_above {attid} 1.0")
@@ -245,21 +246,15 @@ if(RASTER){
     opt_chunk_buffer(ctg) = 0
     opt_stop_early(ctg) = FALSE
     opt_progress(ctg) = TRUE
-
-    opt_merge(ctg)=FALSE
+    opt_merge(ctg)=TRUE
     opt_output_files(ctg) = file.path(OUT_PATH, "tile_{ID}_{XLEFT}_{YBOTTOM}")
-
     ce_ras = pixel_metrics(ctg, ~pix_complexity(X,Y,Z,Height), res=PLOT_SIZE)
     
-    nras = length(ce_ras)
-    cat(glue::glue('\n## -- merging {nras} output raster files\n'))
-    
-    tiles = lapply(ce_ras, rast)
-    merged_raster = do.call(terra::merge, tiles)
+    cat(glue::glue('\n## -- merging output raster files\n'))    
     opath = file.path(OUT_PATH, 'merged.tif')
-    writeRaster(merged_raster, opath, overwrite = TRUE)
-    
-    cat(glue::glue('\n## -- DONE\n'))    
+    writeRaster(ce_ras, opath, overwrite = TRUE)
+
+    cat(glue::glue('\n## -- DONE\n'))
     quit('no')
 }                    
 
