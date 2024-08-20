@@ -1,3 +1,4 @@
 *.parquet
 *.csv
 *.gpkg
+.ipynb_checkpoints

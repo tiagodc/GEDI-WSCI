@@ -5,7 +5,7 @@ This repository contains the models and code used to develop the GEDI WSCI data 
 ## Description 
 
 The scripts provided here enable performing 2 tasks:
-- (R) Calculate the 3D Canopy Entropy (CExyz) (Liu et al. 2023) from LiDAR point cloud samples.
+- (R) Calculate the 3D Canopy Entropy (CExyz) (Liu et al. 2022) from LiDAR point cloud samples.
 - (python) Apply the WSCI models to a set of RH metrics.  
 
 All software versions listed in this repository were used for developing and testing the scripts.
@@ -99,3 +99,8 @@ The `PFT` codes used to call different WSCI models are listed below:
 
 ### References
 
+De Conto, T., Armston, J. & Dubayah, R. O. Global Ecosystem Dynamics Investigation (GEDI)GEDI L4C Footprint Level Waveform Structural Complexity Index, Version 2. 0 MB Preprint at https://doi.org/10.3334/ORNLDAAC/2338 (2024).
+
+Dubayah, R. et al. GEDI L2A Elevation and Height Metrics Data Global Footprint Level V002. NASA EOSDIS Land Processes Distributed Active Archive Center https://doi.org/10.5067/GEDI/GEDI02_A.002 (2021).
+
+Liu, X. et al. A novel entropy-based method to quantify forest canopy structural complexity from multiplatform lidar point clouds. Remote Sensing of Environment 282, 113280 (2022).
