@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/798958913.svg)](https://zenodo.org/doi/10.5281/zenodo.13351657)
+
 # GEDI Waveform Structural Complexity Index (WSCI)
 
 This repository contains the models and code used to develop the GEDI WSCI data product (de Conto et al. 2024).
