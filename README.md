@@ -101,8 +101,10 @@ The `PFT` codes used to call different WSCI models are listed below:
 
 ### References
 
-De Conto, T., Armston, J. & Dubayah, R. O. Global Ecosystem Dynamics Investigation (GEDI)GEDI L4C Footprint Level Waveform Structural Complexity Index, Version 2. 0 MB Preprint at https://doi.org/10.3334/ORNLDAAC/2338 (2024).
+de Conto, T., Armston, J. & Dubayah, R. Characterizing the structural complexity of the Earth’s forests with spaceborne lidar. Nat Commun 15, 8116 (2024). https://doi.org/10.1038/s41467-024-52468-2
 
-Dubayah, R. et al. GEDI L2A Elevation and Height Metrics Data Global Footprint Level V002. NASA EOSDIS Land Processes Distributed Active Archive Center https://doi.org/10.5067/GEDI/GEDI02_A.002 (2021).
+de Conto, T., Armston, J. & Dubayah, R. O. Global Ecosystem Dynamics Investigation (GEDI)GEDI L4C Footprint Level Waveform Structural Complexity Index, Version 2 (2024). https://doi.org/10.3334/ORNLDAAC/2338
+
+Dubayah, R. et al. GEDI L2A Elevation and Height Metrics Data Global Footprint Level V002. NASA EOSDIS Land Processes Distributed Active Archive Center (2021). https://doi.org/10.5067/GEDI/GEDI02_A.002
 
 Liu, X. et al. A novel entropy-based method to quantify forest canopy structural complexity from multiplatform lidar point clouds. Remote Sensing of Environment 282, 113280 (2022).

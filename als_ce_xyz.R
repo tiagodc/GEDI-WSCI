@@ -3,12 +3,14 @@ require(getopt, quietly = TRUE)
 spec = matrix(c(
   'help'       , 'h', 0, "logical",
   'input'      , 'i', 1, "character", ## -- path with ALS files
+  'dtm'        , 't', 1, "character", ## -- path to DTM  
   'output'     , 'o', 1, "character", ## -- path to write structural complexity metrics
   'plots_path' , 'f', 1, "character", ## -- input plot locations (geospatial points file, e.g. GEDI footprint coordinates)
   'n_plots'    , 'n', 1, "integer",   ## -- if no input plot locations are provided, how many random samples to draw?
   'plot_size'  , 's', 1, "integer",   ## -- plot diameter, in point cloud units (e.g. 25m for GEDI footprints)
   'gridded'    , 'g', 0, "logical",   ## -- sample on a regular grid instead of randomly
   'w2w'        , 'w', 0, "logical",   ## -- wall to wall raster outputs (process with LAScatalog)
+  'reclassify' , 'r', 0, "logical",   ## -- force reclassification of ground points
   'las_epsg'   , 'e', 1, "integer",   ## -- EPSG code of ALS point clouds (if not in LASheader)
   'voxel'      , 'v', 1, "double",    ## -- voxel filter initial spacing
   'cores'      , 'c', 1, "integer"    ## -- number of cpus to use
@@ -20,6 +22,9 @@ if ( !is.null(opt$help) || is.null(opt$input) || is.null(opt$output) ) {
   cat(getopt(spec, usage=TRUE))
   q(save='no',status=1)
 }
+
+DTM = NULL
+if(!is.null(opt$dtm)) DTM = opt$dtm
 
 PLOT_SIZE = 25
 if(!is.null(opt$plot_size)) PLOT_SIZE = opt$plot_size
@@ -38,6 +43,9 @@ if(!is.null(opt$las_epsg)) LAS_EPSG = opt$las_epsg
 
 RASTER = FALSE
 if(!is.null(opt$w2w)) RASTER = TRUE
+
+REDO_GROUND = FALSE
+if(!is.null(opt$reclassify)) REDO_GROUND = TRUE
 
 VOXEL = 0
 if(RASTER) VOXEL = 0.5
@@ -128,8 +136,12 @@ get_entropy = function(las){
 }
 
 ## -- pipeline
-las_height = function(las, dtm_res=0.5){
-    dtm = rasterize_terrain(las, res=dtm_res, algorithm = knnidw())
+las_height = function(las, dtm_res=0.5, dtm_path=NULL){
+    if(!is.null(dtm_path)){
+        dtm = terra::rast(dtm_path)
+    }else{
+        dtm = rasterize_terrain(las, res=dtm_res, algorithm = knnidw())
+    }
     las = normalize_height(las, dtm)
     las = add_lasattribute(las, las@data$Z, 'Height', "Height above ground")
     las = unnormalize_height(las)    
@@ -175,15 +187,15 @@ clip_and_process = function(pt, ctg, l=PLOT_SIZE){
 }
 
 ## -- catalog functions
-chunk_height = function(chunk){
+chunk_height = function(chunk, reclassify=FALSE, dtm_path=NULL){
     las = readLAS(chunk)
     if (is.empty(las)) return(NULL)
     
-    if(!any(las$Classification == 2)){
+    if(is.null(dtm_path) && (!any(las$Classification == 2) || reclassify)){
         las = classify_ground(las, csf(), FALSE)
     }
     
-    las = las_height(las)
+    las = las_height(las, dtm_path=dtm_path)
     return(las)
 }
                
@@ -232,7 +244,7 @@ if(RASTER){
         opt_output_files(ctg) = file.path(OUT_PATH, "_laz/tile_{ID}_{XLEFT}_{YBOTTOM}")
         opt_laz_compression(ctg) = TRUE
         
-        ofiles = catalog_apply(ctg, chunk_height)        
+        ofiles = catalog_apply(ctg, chunk_height, reclassify=REDO_GROUND, dtm_path=DTM)
         ctg = ofiles %>% unlist %>% readLAScatalog
         opt_filter(ctg) = "-keep_attribute_above 0 1.0"
         opt_select(ctg) = "xyz1"    
