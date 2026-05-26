@@ -52,7 +52,7 @@ if(RASTER) VOXEL = 0.5
 if(!is.null(opt$voxel)) VOXEL = opt$voxel
 
 n_cores = parallel::detectCores()
-N_WORKERS = as.integer(n_cores / 4)
+N_WORKERS = as.integer(n_cores / 2)
 if(!is.null(opt$cores) && opt$cores <= n_cores) N_WORKERS = opt$cores
 
 IN_PATH = opt$input
@@ -62,13 +62,13 @@ OUT_PATH = opt$output
 ## -- load libraries
 require(future, quietly = TRUE)
 require(future.apply, quietly =  TRUE)
-require(lidR, quietly = TRUE)
 require(magrittr, quietly = TRUE)
 require(TreeLS, quietly = TRUE) # remotes::install_github('tiagodc/TreeLS')
 require(data.table, quietly = TRUE)
 require(wk, quietly = TRUE)
 require(sf, quietly = TRUE)
 require(terra, quietly = TRUE)
+require(lidR, quietly = TRUE)
 
 ## -- 3D Canopy Entropy (Liu et al. 2022)
 avg_point_dist = function(las, h=1){
@@ -154,7 +154,7 @@ get_complexity = function(las, h=1){
     } 
     
     las = filter_poi(las, Height >= h)
-    if(is.empty(las)) return(NULL)
+    if(lidR::is.empty(las)) return(NULL)
 
     ce = get_entropy(las)
     return(ce)
@@ -177,11 +177,11 @@ clip_and_process = function(pt, ctg, l=PLOT_SIZE){
     # filt = paste(filt, "-thin_with_voxel 0.5")
     las = readLAS(files, select = cols, filter = filt)
     
-    if(is.empty(las)) return(NULL)
+    if(lidR::is.empty(las)) return(NULL)
     if(nrow(las@data) < 100) return(NULL)
     if(!any(las$Classification == 2)) return(NULL)
     
-    comp = tryCatch(get_complexity(las), error=function(e) NULL)
+    comp = tryCatch(get_complexity(las), error=function(e){ warning(conditionMessage(e)); NULL })
     return(comp)
     
 }
@@ -189,7 +189,7 @@ clip_and_process = function(pt, ctg, l=PLOT_SIZE){
 ## -- catalog functions
 chunk_height = function(chunk, reclassify=FALSE, dtm_path=NULL){
     las = readLAS(chunk)
-    if (is.empty(las)) return(NULL)
+    if (lidR::is.empty(las)) return(NULL)
     
     if(is.null(dtm_path) && (!any(las$Classification == 2) || reclassify)){
         las = classify_ground(las, csf(), FALSE)
@@ -202,10 +202,10 @@ chunk_height = function(chunk, reclassify=FALSE, dtm_path=NULL){
 pix_complexity = function(x,y,z,h){
     las = suppressMessages(LAS(data.table(X=x,Y=y,Z=z,Height=h), check=F))
     
-    if(is.empty(las)) return(NULL)
+    if(lidR::is.empty(las)) return(NULL)
     
-    ce = tryCatch(get_entropy(las), error=function(e) NULL)
-    
+    ce = tryCatch(get_entropy(las), error=function(e){ warning(conditionMessage(e)); NULL })
+
     if(!is.null(ce)){
         ce = as.list(ce)
     }

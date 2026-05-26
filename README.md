@@ -12,9 +12,26 @@ The scripts provided here enable performing 2 tasks:
 
 All software versions listed in this repository were used for developing and testing the scripts.
 
+## Installation
+
+All R and Python dependencies are declared in `environment.yaml` and can be installed with conda/mamba:
+
+```terminal
+conda env create -f environment.yaml
+conda activate gedi_wsci
+```
+
+`TreeLS` is not packaged on conda-forge and must be installed from GitHub after the environment is created:
+
+```terminal
+R -e 'remotes::install_github("tiagodc/TreeLS")'
+```
+
+The legacy `r_session.txt` and `python_requirements.txt` files are kept for reference to the exact versions used during model development.
+
 #### R code
 
-The R packages necessary to run the `als_ce_xyz.R` tool are listed in the `r_session.txt` file. 
+The `als_ce_xyz.R` tool depends on the R packages declared in `environment.yaml`.
 
 This code was originally used to extract CExyz measures from Airborle laser Scanning (ALS) data matched to GEDI footprints - same location and size (25m diameter plots).
 
@@ -50,7 +67,7 @@ When processing wall-to-wall (`w2w`) generates raster files with bands correspon
 
 #### Python code
 
-The python libraries necessary to run the WSCI models are listed in the `python_requirements.txt` file.
+The Python libraries needed to run the WSCI models are declared in `environment.yaml`.
 
 This code was originally used to generate WSCI estimates from GEDI RH metrics extracted from the L2A product (Dubayah et al. 2020) at different Plant Functional Types (PFTs).
 
